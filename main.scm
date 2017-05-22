@@ -6,14 +6,19 @@
       (car lst)
       (nth (- n 1) (cdr lst))))
 
+(define (good-effect-message?)
+  (print "もし提案した手法が効果があると感じた場合は \"g\" を入力してください")
+  (string=? (read) "g"))
+
 (define (main)
   (let ((database (load "./database.scm")))
+    (print "続けますか？(\"exit\" or \"other\")")
     (if (not (string=? (read) "exit"))
-        (let ((num (random-integer (length databes)))
+        (let ((num (random-integer (length databes))) ; 貢献度に依存させたい
               (message (car (nth num database)))
               (contribution (car (cdr (nth num database)))))
           (print message)
-          (if (good-effect-message?)     ; "もし提案した手法が効果があったのであれば○キーを押してください"
+          (if (good-effect-message?)
               (let (new-database (update-nth-assoc database num (+ 1 contribution)))
                 (save-file new-database "./database.scm")
                 (main))
