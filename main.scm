@@ -15,7 +15,8 @@
           (print message)
           (if (good-effect-message?)     ; "もし提案した手法が効果があったのであれば○キーを押してください"
               (let (new-database (update-nth-assoc database num (+ 1 contribution)))
-                (save-file new-database "./database.scm"))
+                (save-file new-database "./database.scm")
+                (main))
               (main))))))
 
 ;; Issues 実行不可 (good-effect-message?) (update-nth-assoc) (save-file)  同じ質問くる 
