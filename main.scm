@@ -2,11 +2,6 @@
 (use srfi-27)                           ; for 乱数
 (use util.list)
 
-(define (nth n lst)
-  (if (zero? n)
-      (car lst)
-      (nth (- n 1) (cdr lst))))
-
 (define (good-effect-message?)
   (print "もし提案した手法が効果があると感じた場合は g を入力してください")
   (eq? (read) 'g))
