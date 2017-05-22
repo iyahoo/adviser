@@ -10,6 +10,8 @@
   (print "もし提案した手法が効果があると感じた場合は \"g\" を入力してください")
   (string=? (read) "g"))
 
+
+
 (define (main)
   (let ((database (load "./database.scm")))
     (print "続けますか？(\"exit\" or \"other\")")
@@ -24,5 +26,5 @@
                 (main))
               (main))))))
 
-;; Issues 実行不可 (good-effect-message?) (update-nth-assoc) (save-file)  同じ質問くる 
+;; Issues 実行不可 (update-nth-assoc) (save-file)  同じ質問くる
 
