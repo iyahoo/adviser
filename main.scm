@@ -54,7 +54,7 @@
                    (a-process database keys-len))))])))
 
 (define main
-  (lambda args
+  (lambda [args]
     (let* ([database (read-file *database-file-path*)]
            [keys (delete-duplicates (map (lambda [lst] (car lst)) database))]
            [keys-len (length keys)])
