@@ -22,10 +22,12 @@
 
 (define (id-of-num-minused-by-list-until-0 num lst)
   (let loop ([num num] [lst lst] [idx 0])
-      (let ([judge-value (- num (car lst))])
-	(if (or (< judge-value 0) (null? lst))
-	    idx
-	    (loop judge-value (cdr lst) (+ idx 1))))))
+    (if (null? lst)
+	idx
+	(let ([judge-value (- num (car lst))])
+	  (if (< judge-value 0)
+	      idx
+	      (loop judge-value (cdr lst) (+ idx 1)))))))
 
 (define (select-message-id keys-len database)
   (let* ([u-database (delete-duplicate-assoc-keys database)]
