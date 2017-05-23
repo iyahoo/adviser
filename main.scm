@@ -23,35 +23,36 @@
 (define (id-of-num-minused-by-list-until-0 num lst)
   (let loop ([num num] [lst lst] [idx 0])
     (if (null? lst)
-	idx
-	(let ([judge-value (- num (car lst))])
-	  (if (< judge-value 0)
-	      idx
-	      (loop judge-value (cdr lst) (+ idx 1)))))))
+        idx
+        (let ([judge-value (- num (car lst))])
+          (if (< judge-value 0)
+              idx
+              (loop judge-value (cdr lst) (+ idx 1)))))))
 
 (define (select-message-id keys-len database)
-  (let* ([u-database (delete-duplicate-assoc-keys database)]
+  (let* ([u-database    (delete-duplicate-assoc-keys database)]
          [contributions (map (lambda (entry) (list-ref entry 2)) u-database)]
-         [roulette-num (random-integer (reduce + 0 contributions))])
+         [roulette-num  (random-integer (reduce + 0 contributions))])
     (id-of-num-minused-by-list-until-0 roulette-num contributions)))
 
 (define (a-process database keys-len)
   (print "調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
   (let ([command (read)])
-    (cond [(eq? command 'good)
-           (a-process database keys-len)]
-          [(eq? command 'exit)
-           (save-file *database-file-path* (delete-duplicate-assoc-keys database))
-           (print "終了します")]
-          [else
-           (let* ([target-id (select-message-id keys-len database)]
-                  [entry     (assoc target-id database)])
-             (match-let1 (id message contribution) entry
-               (print message)
-               (if (good-effect-message?)
-                   (let ([new-database (alist-cons id (list message (+ 1 contribution)) database)])
-                     (a-process new-database keys-len))
-                   (a-process database keys-len))))])))
+    (match command
+       ['good
+        (a-process database keys-len)]
+       ['exit
+        (save-file *database-file-path* (delete-duplicate-assoc-keys database))
+        (print "終了します")]
+       [else
+        (let* ([target-id (select-message-id keys-len database)]
+               [entry     (assoc target-id database)])
+          (match-let1 (id message contribution) entry
+            (print message)
+            (if (good-effect-message?)
+                (let ([new-database (alist-cons id (list message (+ 1 contribution)) database)])
+                  (a-process new-database keys-len))
+                (a-process database keys-len))))])))
 
 (define main
   (lambda [args]
