@@ -21,13 +21,13 @@
   (delete-duplicates alist (lambda (a b) (equal? (car a) (car b)))))
 
 (define (id-of-num-minused-by-list-until-0 num lst)
-  (%id-of-num-minused-by-list-until-0 num lst 0))
-
-(define (%id-of-num-minused-by-list-until-0 num lst idx)
-  (let ([judge-value (- num (car lst))])
-    (if (or (< judge-value 0) (null? lst))
-        idx
-        (%id-of-num-minused-by-list-until-0 judge-value (cdr lst) (+ idx 1)))))
+  (let loop ([num num] [lst lst] [idx 0])
+    (if (null? lst)
+	idx
+	(let ([judge-value (- num (car lst))])
+	  (if (< judge-value 0)
+	      idx
+	      (loop judge-value (cdr lst) (+ idx 1)))))))
 
 (define (select-message-id keys-len database)
   (let* ([u-database (delete-duplicate-assoc-keys database)]
@@ -54,7 +54,7 @@
                    (a-process database keys-len))))])))
 
 (define main
-  (lambda args
+  (lambda [args]
     (let* ([database (read-file *database-file-path*)]
            [keys (delete-duplicates (map (lambda [lst] (car lst)) database))]
            [keys-len (length keys)])
