@@ -22,8 +22,8 @@
           [(eq? command 'exit)
            (print "終了します")]
           [else
-           (let* ([target-id    (random-integer keys-len)] ; 貢献度に依存させたい
-                  [entry        (assoc target-id database)])
+           (let* ([target-id (random-integer keys-len)] ; 貢献度に依存させたい
+                  [entry     (assoc target-id database)])
              (match-let1 (id message contribution) entry
                (print message)
                (if (good-effect-message?)
