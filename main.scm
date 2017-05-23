@@ -4,6 +4,7 @@
 (use util.match)                        ; like destructuring-bind
 
 (define *database-file-path* "./database.scm")
+(define *tmp-database-file-path* "./tmp-database.scm")
 
 (define (good-effect-message?)
   (print "もし提案した手法が効果があると感じた場合は g を入力してください")
@@ -19,6 +20,21 @@
 (define (delete-duplicate-assoc-keys alist)
   (delete-duplicates alist (lambda (a b) (equal? (car a) (car b)))))
 
+(define (id-of-num-minused-by-list-until-0 num lst)
+  (%id-of-num-minused-by-list-until-0 num lst 0))
+
+(define (%id-of-num-minused-by-list-until-0 num lst idx)
+  (let ([judge-value (- num (car lst))])
+    (if (or (< judge-value 0) (null? lst))
+        idx
+        (%id-of-num-minused-by-list-until-0 judge-value (cdr lst) (+ idx 1)))))
+
+(define (select-message-id keys-len database)
+  (let* ([u-database (delete-duplicate-assoc-keys database)]
+         [contributions (map (lambda (entry) (list-ref entry 2)) u-database)]
+         [roulette-num (random-integer (reduce + 0 contributions))])
+    (id-of-num-minused-by-list-until-0 roulette-num contributions)))
+
 (define (a-process database keys-len)
   (print "調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
   (let ([command (read)])
@@ -28,7 +44,7 @@
            (save-file *database-file-path* (delete-duplicate-assoc-keys database))
            (print "終了します")]
           [else
-           (let* ([target-id (random-integer keys-len)] ; 貢献度に依存させたい
+           (let* ([target-id (select-message-id keys-len database)]
                   [entry     (assoc target-id database)])
              (match-let1 (id message contribution) entry
                (print message)
