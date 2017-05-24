@@ -1,6 +1,5 @@
 (use srfi-1)
 (use srfi-27)                           ; for 乱数
-(use util.list)
 (use util.match)                        ; like destructuring-bind
 
 (define *database-file-path* "./database.scm")
