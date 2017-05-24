@@ -50,7 +50,7 @@
   (let ([command (read)])
     (match command
       ['good
-       (print "今の作業を何分やりますか？")
+       (print "今の作業を何分やりますか？正の整数を入力して下さい")
        (let ([work-time (read)])
          (let sleep-loop ([current-time 1] [work-time work-time])
            (unless (> 0 (- work-time current-time))
