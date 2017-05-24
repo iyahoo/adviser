@@ -1,9 +1,12 @@
 (use srfi-1)
+(use srfi-13)                           ; 文字列
 (use srfi-27)                           ; for 乱数
 (use util.match)                        ; like destructuring-bind
+(use gauche.process)                    ; System call
 
 (define *database-file-path* "./database.scm")
 (define *tmp-database-file-path* "./tmp-database.scm")
+(define *sys-path* "/usr/local/bin/")
 
 (define (good-effect-message?)
   (print "もし提案した手法が効果があると感じた場合は g を入力してください")
@@ -44,6 +47,16 @@
       (display "."))
   (flush))
 
+(define (check-os)
+  (call-with-input-process "uname"
+    (lambda (p) (make-keyword (read-line p)))))
+
+(define (notify)
+  (call-with-input-process
+   (string-concatenate (list *sys-path* "terminal-notifier -message 'Finish working time'"))
+   (lambda (p) #t)
+   :on-abnormal-exit :ignore))
+
 (define (a-process database keys-len)
   (print "\n調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
   (let ([command (read)])
@@ -55,6 +68,8 @@
            (unless (> 0 (- work-time current-time))
              (time-manage current-time 5)
              (sleep-loop (+ 1 current-time) work-time)))
+         (match (check-os)
+           [':Darwin (notify)])
          (a-process database keys-len))]
       ['exit
        (save-file *database-file-path* (delete-duplicate-assoc-keys database))
