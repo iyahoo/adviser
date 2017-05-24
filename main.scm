@@ -35,27 +35,43 @@
          [roulette-num  (random-integer (reduce + 0 contributions))])
     (id-of-num-minused-by-list-until-0 roulette-num contributions)))
 
+(define (a-minute-sleep)
+  (sys-sleep 60))
+
+(define (time-manage current-time interval)
+  (a-minute-sleep)
+  (if (= 0 (remainder current-time interval))
+      (display current-time)
+      (display "."))
+  (flush))
+
 (define (a-process database keys-len)
-  (print "調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
+  (print "\n調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
   (let ([command (read)])
     (match command
-       ['good
-        (a-process database keys-len)]
-       ['exit
-        (save-file *database-file-path* (delete-duplicate-assoc-keys database))
-        (print "終了します")]
-       [else
-        (let* ([target-id (select-message-id keys-len database)]
-               [entry     (assoc target-id database)])
-          (match-let1 (id message contribution) entry
-            (print message)
-            (if (good-effect-message?)
-                (let ([new-database (alist-cons id (list message (+ 1 contribution)) database)])
-                  (a-process new-database keys-len))
-                (a-process database keys-len))))])))
+      ['good
+       (print "今の作業を何分やりますか？")
+       (let ([work-time (read)])
+         (let sleep-loop ([current-time 1] [work-time work-time])
+           (unless (> 0 (- work-time current-time))
+             (time-manage current-time 5)
+             (sleep-loop (+ 1 current-time) work-time)))
+         (a-process database keys-len))]
+      ['exit
+       (save-file *database-file-path* (delete-duplicate-assoc-keys database))
+       (print "終了します")]
+      [else
+       (let* ([target-id (select-message-id keys-len database)]
+              [entry     (assoc target-id database)])
+         (match-let1 (id message contribution) entry
+           (print message)
+           (if (good-effect-message?)
+               (let ([new-database (alist-cons id (list message (+ 1 contribution)) database)])
+                 (a-process new-database keys-len))
+               (a-process database keys-len))))])))
 
 (define main
-  (lambda [args]
+  (lambda args
     (let* ([database (read-file *database-file-path*)]
            [keys (delete-duplicates (map (lambda [lst] (car lst)) database))]
            [keys-len (length keys)])
