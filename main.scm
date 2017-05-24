@@ -70,9 +70,8 @@
                  (a-process new-database keys-len))
                (a-process database keys-len))))])))
 
-(define main
-  (lambda args
-    (let* ([database (read-file *database-file-path*)]
-           [keys (delete-duplicates (map (lambda [lst] (car lst)) database))]
-           [keys-len (length keys)])
-      (a-process database keys-len))))
+(define (main :optional (args '()))
+  (let* ([database (read-file *database-file-path*)]
+         [keys (delete-duplicates (map (lambda [lst] (car lst)) database))]
+         [keys-len (length keys)])
+    (a-process database keys-len)))
