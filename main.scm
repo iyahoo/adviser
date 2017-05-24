@@ -53,7 +53,9 @@
 
 (define (notify)
   (call-with-input-process
-   (string-concatenate (list *sys-path* "terminal-notifier -message 'Finish working time'"))
+   (string-concatenate (list *sys-path*
+                             "terminal-notifier -message \"Finish working time\""
+                             " -closeLabel Close"))
    (lambda (p) #t)
    :on-abnormal-exit :ignore))
 
