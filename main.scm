@@ -31,7 +31,7 @@
               idx
               (loop judge-value (cdr lst) (+ idx 1)))))))
 
-(define (select-advice-id keys-len database)
+(define (select-advice-id database keys-len)
   (let* ([u-database    (delete-duplicate-assoc-keys database)]
          [contributions (map (lambda (entry) (list-ref entry 2)) u-database)]
          [roulette-num  (random-integer (reduce + 0 contributions))])
