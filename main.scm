@@ -8,10 +8,6 @@
 (define *tmp-database-file-path* "./tmp-database.scm")
 (define *sys-path* "/usr/local/bin/")
 
-(define (good-effect-advice?)
-  (print "もし提案した手法が効果があると感じた場合は g を入力してください")
-  (eq? (read) 'g))
-
 (define (read-file fname)
   (with-input-from-file fname (lambda [] (read))))
 
@@ -59,6 +55,29 @@
    (lambda (p) #t)
    :on-abnormal-exit :ignore))
 
+(define (show-advices database)
+  (string-concatenate
+   (map
+    (match-lambda ([id advice contribution]
+                   (string-concatenate (list (number->string id) ": " advice "\n")))
+                  (else
+                   ""))
+    (delete-duplicate-assoc-keys database))))
+
+(define (print-evaluate-advice target-id database keys-len)
+  (let ([entry (assoc target-id database)])
+    (match-let1 (id advice contribution) entry
+      (print advice)
+      (if (good-effect-advice?)
+          (let ([new-database
+                 (alist-cons id (list advice (+ 1 contribution)) database)])
+            (a-process new-database keys-len))
+          (a-process database keys-len)))))
+
+(define (good-effect-advice?)
+  (print "もし提案した手法が効果があると感じた場合は g を入力してください。")
+  (eq? (read) 'g))
+
 (define (a-process database keys-len)
   (print "\n調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
   (let ([command (read)])
@@ -77,14 +96,20 @@
        (save-file *database-file-path* (delete-duplicate-assoc-keys database))
        (print "終了します")]
       [else
-       (let* ([target-id (select-advice-id keys-len database)]
-              [entry     (assoc target-id database)])
-         (match-let1 (id advice contribution) entry
-           (print advice)
-           (if (good-effect-advice?)
-               (let ([new-database (alist-cons id (list advice (+ 1 contribution)) database)])
-                 (a-process new-database keys-len))
-               (a-process database keys-len))))])))
+       (let advice-loop []
+         (print "何かアドバイスをしましょうか？それとも一覧を見ますか？")
+         (print "(t:アドバイスをランダムに選択 all:一覧を見る others:戻る)")
+         (match (read)
+           ['t
+            (let ([target-id (select-advice-id database keys-len)])
+              (print-evaluate-advice target-id database keys-len))]
+           ['all
+            (print (show-advices database))
+            (print "試してみるアドバイスを入力してください")
+            (let ([input-id (read)])
+              (print-evaluate-advice input-id database keys-len))]
+           [else
+            (a-process database keys-len)]))])))
 
 (define (main :optional (args '()))
   (let* ([database (read-file *database-file-path*)]
