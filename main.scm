@@ -3,10 +3,11 @@
 (use srfi-27)                           ; for 乱数
 (use util.match)                        ; like destructuring-bind
 (use gauche.process)                    ; System call
+(use file.util)
 
 (define *database-file-path* "./database.scm")
 (define *tmp-database-file-path* "./tmp-database.scm")
-(define *sys-path* "/usr/local/bin/")
+(define *notify-script-path* "./notify.sh")
 
 (define (read-file fname)
   (with-input-from-file fname (lambda [] (read))))
@@ -48,13 +49,12 @@
   (call-with-input-process "uname"
     (lambda (p) (make-keyword (read-line p)))))
 
-(define (notify)
-  (call-with-input-process
-   (string-concatenate (list *sys-path*
-                             "terminal-notifier -message \"Finish working time\""
-                             " -closeLabel Close"))
-   (lambda (p) #t)
-   :on-abnormal-exit :ignore))
+(define (notify message)
+  (when (file-is-executable? *notify-script-path*)
+	(call-with-input-process
+	 (string-concatenate (list *notify-script-path* " \"" message "\""))
+	 (lambda (p) #t)
+	 :on-abnormal-exit :ignore)))
 
 (define (show-advices database)
   (string-concatenate
@@ -91,7 +91,7 @@
              (time-manage current-time 5)
              (sleep-loop (+ 1 current-time) work-time)))
          (match (check-os)
-           [':Darwin (notify)])
+           [':Darwin (notify "Finish working time")])
          (a-process database))]
       ['exit
        (save-file *database-file-path* (delete-duplicate-assoc-keys database))
