@@ -5,8 +5,8 @@
 (use gauche.process)                    ; System call
 (use file.util)
 
-(define *database-file-path* "./database.scm")
-(define *tmp-database-file-path* "./tmp-database.scm")
+(define *database-seed-path* "./seed.sxp")
+(define *database-file-path* "./database.sxp")
 (define *notify-script-path* "./notify.sh")
 
 (define (read-file fname)
@@ -51,10 +51,8 @@
 
 (define (notify message)
   (when (file-is-executable? *notify-script-path*)
-	(call-with-input-process
-	 (string-concatenate (list *notify-script-path* " \"" message "\""))
-	 (lambda (p) #t)
-	 :on-abnormal-exit :ignore)))
+	(sys-system
+	 (format #f "~A ~S" *notify-script-path* message))))
 
 (define (show-advices database)
   (string-concatenate
@@ -92,7 +90,7 @@
 
 (define (set-entry db id entry)
   ;; database -> id -> entry -> database
-  (alist-cons id entry db))
+  (alist-cons id (cdr entry) db))
 
 (define (update-entry db id f)
   ;; database -> id -> (advice -> contribution -> entry) -> database
@@ -155,6 +153,10 @@
            [else
             (a-process database)]))])))
 
+
 (define (main :optional (args '()))
-  (let* ([database (read-file *database-file-path*)])
+  (let* ([db-file (if (file-is-writable? *database-file-path*)
+		      *database-file-path*
+		      *database-seed-path*)]
+	 [database (read-file db-file)])
     (a-process database)))
