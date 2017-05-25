@@ -8,7 +8,7 @@
 (define *tmp-database-file-path* "./tmp-database.scm")
 (define *sys-path* "/usr/local/bin/")
 
-(define (good-effect-message?)
+(define (good-effect-advice?)
   (print "もし提案した手法が効果があると感じた場合は g を入力してください")
   (eq? (read) 'g))
 
@@ -31,7 +31,7 @@
               idx
               (loop judge-value (cdr lst) (+ idx 1)))))))
 
-(define (select-message-id keys-len database)
+(define (select-advice-id keys-len database)
   (let* ([u-database    (delete-duplicate-assoc-keys database)]
          [contributions (map (lambda (entry) (list-ref entry 2)) u-database)]
          [roulette-num  (random-integer (reduce + 0 contributions))])
@@ -77,12 +77,12 @@
        (save-file *database-file-path* (delete-duplicate-assoc-keys database))
        (print "終了します")]
       [else
-       (let* ([target-id (select-message-id keys-len database)]
+       (let* ([target-id (select-advice-id keys-len database)]
               [entry     (assoc target-id database)])
-         (match-let1 (id message contribution) entry
-           (print message)
-           (if (good-effect-message?)
-               (let ([new-database (alist-cons id (list message (+ 1 contribution)) database)])
+         (match-let1 (id advice contribution) entry
+           (print advice)
+           (if (good-effect-advice?)
+               (let ([new-database (alist-cons id (list advice (+ 1 contribution)) database)])
                  (a-process new-database keys-len))
                (a-process database keys-len))))])))
 
