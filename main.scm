@@ -16,9 +16,6 @@
   (with-output-to-file fname (lambda [] (write data))
                        :if-exists :supersede))
 
-(define (delete-duplicate-assoc-keys alist)
-  (delete-duplicates alist (lambda (a b) (equal? (car a) (car b)))))
-
 (define (id-of-num-minused-by-list-until-0 num lst keys)
   (let loop ([num num] [lst lst] [keys keys])
     (if (null? lst)
@@ -29,10 +26,9 @@
               (loop judge-value (cdr lst) (cdr keys)))))))
 
 (define (select-advice-id database)
-  (let* ([u-database    (delete-duplicate-assoc-keys database)]
-         [contributions (map (lambda (entry) (list-ref entry 2)) u-database)]
+  (let* ([contributions (map (lambda (entry) (list-ref entry 2)) database)]
          [roulette-num  (random-integer (reduce + 0 contributions))]
-         [keys          (map (lambda (entry) (car entry)) u-database)])
+         [keys          (map (lambda (entry) (car entry)) database)])
     (id-of-num-minused-by-list-until-0 roulette-num contributions keys)))
 
 (define (a-minute-sleep)
@@ -61,7 +57,7 @@
                    (string-concatenate (list (number->string id) ": " advice "\n")))
                   (else
                    ""))
-    (delete-duplicate-assoc-keys database))))
+    database)))
 
 (define (good-effect-advice?)
   (eq? (read) 'g))
@@ -90,7 +86,7 @@
 
 (define (set-entry db id entry)
   ;; database -> id -> entry -> database
-  (alist-cons id (cdr entry) db))
+  (alist-cons id (cdr entry) (alist-delete id db)))
 
 (define (update-entry db id f)
   ;; database -> id -> (advice -> contribution -> entry) -> database
@@ -135,7 +131,7 @@
 	 (notify "Finish working time")
          (a-process database))]
       ['exit
-       (save-file *database-file-path* (delete-duplicate-assoc-keys database))
+       (save-file *database-file-path* database)
        (print "終了します")]
       [else
        (let advice-loop []
