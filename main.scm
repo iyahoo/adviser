@@ -16,53 +16,6 @@
   (with-output-to-file fname (lambda [] (write data))
                        :if-exists :supersede))
 
-(define (id-of-num-minused-by-list-until-0 num lst keys)
-  (let loop ([num num] [lst lst] [keys keys])
-    (if (null? lst)
-        (car keys)
-        (let ([judge-value (- num (car lst))])
-          (if (< judge-value 0)
-              (car keys)
-              (loop judge-value (cdr lst) (cdr keys)))))))
-
-(define (select-advice-id database)
-  (let* ([contributions (map (lambda (entry) (list-ref entry 2)) database)]
-         [roulette-num  (random-integer (reduce + 0 contributions))]
-         [keys          (map (lambda (entry) (car entry)) database)])
-    (id-of-num-minused-by-list-until-0 roulette-num contributions keys)))
-
-(define (a-minute-sleep)
-  (sys-sleep 60))
-
-(define (time-manage current-time interval)
-  (a-minute-sleep)
-  (if (= 0 (remainder current-time interval))
-      (display current-time)
-      (display "."))
-  (flush))
-
-(define (check-os)
-  (call-with-input-process "uname"
-    (lambda (p) (make-keyword (read-line p)))))
-
-(define (notify message)
-  (when (file-is-executable? *notify-script-path*)
-	(sys-system
-	 (format #f "~A ~S" *notify-script-path* message))))
-
-(define (show-advices database)
-  (string-concatenate
-   (map
-    (match-lambda ([id advice contribution]
-                   (string-concatenate (list (number->string id) ": " advice "\n")))
-                  (else
-                   ""))
-    database)))
-
-(define (good-effect-advice?)
-  (eq? (read) 'g))
-
-
 ;; Entry Accessors
 ;; entry: (id advice contribution)
 
@@ -107,6 +60,34 @@
   (update-entry db id (lambda [advice contrib] (make-entry id advice (+ contrib 1)))))
 
 
+;; Entry selection routine
+
+(define (id-of-num-minused-by-list-until-0 num lst keys)
+  (let loop ([num num] [lst lst] [keys keys])
+    (if (null? lst)
+        (car keys)
+        (let ([judge-value (- num (car lst))])
+          (if (< judge-value 0)
+              (car keys)
+              (loop judge-value (cdr lst) (cdr keys)))))))
+
+(define (select-advice-id database)
+  (let* ([contributions (map (lambda (entry) (list-ref entry 2)) database)]
+         [roulette-num  (random-integer (reduce + 0 contributions))]
+         [keys          (map (lambda (entry) (car entry)) database)])
+    (id-of-num-minused-by-list-until-0 roulette-num contributions keys)))
+
+
+;; Print-Eval-Advice-Loop
+
+(define (show-advices database)
+  (string-concatenate
+   (map
+    (match-lambda ([id advice contribution]
+                   (string-concatenate (list (number->string id) ": " advice "\n")))
+                  (else
+                   ""))
+    database)))
 
 (define (print-evaluate-advice target-id database)
   (let ([entry (get-entry database target-id)])
@@ -116,6 +97,27 @@
 	(a-process (increment-contribution database target-id))
 	(a-process database))))
 
+(define (good-effect-advice?)
+  (eq? (read) 'g))
+
+(define (a-minute-sleep)
+  (sys-sleep 60))
+
+(define (time-manage current-time interval)
+  (a-minute-sleep)
+  (if (= 0 (remainder current-time interval))
+      (display current-time)
+      (display "."))
+  (flush))
+
+(define (check-os)
+  (call-with-input-process "uname"
+    (lambda (p) (make-keyword (read-line p)))))
+
+(define (notify message)
+  (when (file-is-executable? *notify-script-path*)
+	(sys-system
+	 (format #f "~A ~S" *notify-script-path* message))))
 
 (define (a-process database)
   (print "\n調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
@@ -149,6 +151,8 @@
            [else
             (a-process database)]))])))
 
+
+;; main
 
 (define (main :optional (args '()))
   (let* ([db-file (if (file-is-writable? *database-file-path*)
