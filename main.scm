@@ -68,16 +68,60 @@
 (define (good-effect-advice?)
   (eq? (read) 'g))
 
+
+;; Entry Accessors
+;; entry: (id advice contribution)
+
+(define (make-entry id advice contribution)
+  (list id advice contribution))
+
+(define (entry-id entry)
+  (first entry))
+
+(define (entry-advice entry)
+  (second entry))
+
+(define (entry-contribution entry)
+  (third entry))
+
+
+;; Database Accessors (non-destructive)
+
+(define (get-entry db id)
+  (assoc id db))
+
+(define (set-entry db id entry)
+  ;; database -> id -> entry -> database
+  (alist-cons id entry db))
+
+(define (update-entry db id f)
+  ;; database -> id -> (advice -> contribution -> entry) -> database
+  ;; fにidとentryそのものを渡さないのは、
+  ;; - idはこの関数を呼び出した場所でわかるはず
+  ;; - entryはそのidとdbから引けるはず
+  ;; という理由
+  (let* ([entry (get-entry db id)]
+	 [advice (entry-advice entry)]
+	 [contrib (entry-contribution entry)])
+    (set-entry db id (f advice contrib))))
+
+
+;; Entry Operators
+
+(define (increment-contribution db id)
+  ;; database -> entry-id -> database
+  (update-entry db id (lambda [advice contrib] (make-entry id advice (+ contrib 1)))))
+
+
+
 (define (print-evaluate-advice target-id database)
-  (let ([entry (assoc target-id database)])
-    (match-let1 (id advice contribution) entry
-      (print advice)
-      (print "もし提案した手法が効果があると感じた場合は g を入力してください。")
-      (if (good-effect-advice?)
-          (let ([new-database
-                 (alist-cons id (list advice (+ 1 contribution)) database)])
-            (a-process new-database))
-          (a-process database)))))
+  (let ([entry (get-entry database target-id)])
+    (print (entry-advice entry))
+    (print "もし提案した手法が効果があると感じた場合は g を入力してください。")
+    (if (good-effect-advice?)
+	(a-process (increment-contribution database target-id))
+	(a-process database))))
+
 
 (define (a-process database)
   (print "\n調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
