@@ -86,6 +86,29 @@
 
 ;; Print-Eval-Advice-Loop
 
+;; Sleep and Display
+(define (a-minute-sleep)
+  (sys-sleep 60))
+
+(define (a-second-sleep) ; for debugging
+  (sys-sleep 1))
+
+(define (display-elapsed current-time interval)
+  (if (= 0 (remainder current-time interval))
+      (display current-time)
+      (display "."))
+  (flush))
+
+(define (sleep-loop sleep-unit-f time interval)
+  ;; sleep-unit-f: プロセスをブロックする、スリープ関数
+  ;; これにa-second-sleepなどを渡すことで、REPLから動作を確かめられる
+  ;; ex: (sleep-loop a-second-sleep 10 3)
+  (let loop ([current 1])
+    (sleep-unit-f)
+    (display-elapsed current interval)
+    (when (> time current) (loop (+ 1 current)))))
+
+
 (define (show-advices database)
   (string-concatenate
    (map
@@ -106,15 +129,6 @@
 (define (good-effect-advice?)
   (eq? (read) 'g))
 
-(define (a-minute-sleep)
-  (sys-sleep 60))
-
-(define (time-manage current-time interval)
-  (a-minute-sleep)
-  (if (= 0 (remainder current-time interval))
-      (display current-time)
-      (display "."))
-  (flush))
 
 (define (check-os)
   (call-with-input-process "uname"
@@ -132,12 +146,9 @@
       ['good
        (print "今の作業を何分やりますか？正の整数を入力して下さい")
        (let ([work-time (read)])
-         (let sleep-loop ([current-time 1] [work-time work-time])
-           (unless (> 0 (- work-time current-time))
-             (time-manage current-time 5)
-             (sleep-loop (+ 1 current-time) work-time)))
-	 (notify "Finish working time")
-         (a-process database))]
+	 (sleep-loop a-minute-sleep work-time 5))
+       (notify "Finish working time")
+       (a-process database)]
       ['exit
        (save-file *database-file-path* database)
        (print "終了します")]
