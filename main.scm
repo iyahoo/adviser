@@ -134,8 +134,7 @@
            (unless (> 0 (- work-time current-time))
              (time-manage current-time 5)
              (sleep-loop (+ 1 current-time) work-time)))
-         (match (check-os)
-           [':Darwin (notify "Finish working time")])
+	 (notify "Finish working time")
          (a-process database))]
       ['exit
        (save-file *database-file-path* (delete-duplicate-assoc-keys database))
