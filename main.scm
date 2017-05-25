@@ -25,7 +25,7 @@
         (let ([judge-value (- num (car lst))])
           (if (< judge-value 0)
               (car keys)
-              (loop judge-value (cdr lst) (+ idx 1) (cdr keys)))))))
+              (loop judge-value (cdr lst) (cdr keys)))))))
 
 (define (select-advice-id database)
   (let* ([u-database    (delete-duplicate-assoc-keys database)]
