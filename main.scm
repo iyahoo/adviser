@@ -27,7 +27,7 @@
               idx
               (loop judge-value (cdr lst) (+ idx 1)))))))
 
-(define (select-advice-id database keys-len)
+(define (select-advice-id database)
   (let* ([u-database    (delete-duplicate-assoc-keys database)]
          [contributions (map (lambda (entry) (list-ref entry 2)) u-database)]
          [roulette-num  (random-integer (reduce + 0 contributions))])
@@ -67,7 +67,7 @@
 (define (good-effect-advice?)
   (eq? (read) 'g))
 
-(define (print-evaluate-advice target-id database keys-len)
+(define (print-evaluate-advice target-id database)
   (let ([entry (assoc target-id database)])
     (match-let1 (id advice contribution) entry
       (print advice)
@@ -75,10 +75,10 @@
       (if (good-effect-advice?)
           (let ([new-database
                  (alist-cons id (list advice (+ 1 contribution)) database)])
-            (a-process new-database keys-len))
-          (a-process database keys-len)))))
+            (a-process new-database))
+          (a-process database)))))
 
-(define (a-process database keys-len)
+(define (a-process database)
   (print "\n調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
   (let ([command (read)])
     (match command
@@ -91,7 +91,7 @@
              (sleep-loop (+ 1 current-time) work-time)))
          (match (check-os)
            [':Darwin (notify)])
-         (a-process database keys-len))]
+         (a-process database))]
       ['exit
        (save-file *database-file-path* (delete-duplicate-assoc-keys database))
        (print "終了します")]
@@ -101,18 +101,16 @@
          (print "(t:アドバイスをランダムに選択 all:一覧を見る others:戻る)")
          (match (read)
            ['t
-            (let ([target-id (select-advice-id database keys-len)])
-              (print-evaluate-advice target-id database keys-len))]
+            (let ([target-id (select-advice-id database)])
+              (print-evaluate-advice target-id database))]
            ['all
             (print (show-advices database))
             (print "試してみるアドバイスを入力してください")
             (let ([input-id (read)])
-              (print-evaluate-advice input-id database keys-len))]
+              (print-evaluate-advice input-id database))]
            [else
-            (a-process database keys-len)]))])))
+            (a-process database)]))])))
 
 (define (main :optional (args '()))
-  (let* ([database (read-file *database-file-path*)]
-         [keys (delete-duplicates (map (lambda [lst] (car lst)) database))]
-         [keys-len (length keys)])
-    (a-process database keys-len)))
+  (let* ([database (read-file *database-file-path*)])
+    (a-process database)))
