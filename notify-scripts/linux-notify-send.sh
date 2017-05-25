@@ -1,3 +1,3 @@
 #!/bin/sh
 
-notify-send $1
+notify-send "$1"
