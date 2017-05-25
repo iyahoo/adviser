@@ -18,20 +18,21 @@
 (define (delete-duplicate-assoc-keys alist)
   (delete-duplicates alist (lambda (a b) (equal? (car a) (car b)))))
 
-(define (id-of-num-minused-by-list-until-0 num lst)
-  (let loop ([num num] [lst lst] [idx 0])
+(define (id-of-num-minused-by-list-until-0 num lst keys)
+  (let loop ([num num] [lst lst] [keys keys])
     (if (null? lst)
-        idx
+        (car keys)
         (let ([judge-value (- num (car lst))])
           (if (< judge-value 0)
-              idx
-              (loop judge-value (cdr lst) (+ idx 1)))))))
+              (car keys)
+              (loop judge-value (cdr lst) (+ idx 1) (cdr keys)))))))
 
 (define (select-advice-id database)
   (let* ([u-database    (delete-duplicate-assoc-keys database)]
          [contributions (map (lambda (entry) (list-ref entry 2)) u-database)]
-         [roulette-num  (random-integer (reduce + 0 contributions))])
-    (id-of-num-minused-by-list-until-0 roulette-num contributions)))
+         [roulette-num  (random-integer (reduce + 0 contributions))]
+         [keys          (map (lambda (entry) (car entry)) u-database)])
+    (id-of-num-minused-by-list-until-0 roulette-num contributions keys)))
 
 (define (a-minute-sleep)
   (sys-sleep 60))
