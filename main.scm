@@ -64,19 +64,19 @@
                    ""))
     (delete-duplicate-assoc-keys database))))
 
+(define (good-effect-advice?)
+  (eq? (read) 'g))
+
 (define (print-evaluate-advice target-id database keys-len)
   (let ([entry (assoc target-id database)])
     (match-let1 (id advice contribution) entry
       (print advice)
+      (print "もし提案した手法が効果があると感じた場合は g を入力してください。")
       (if (good-effect-advice?)
           (let ([new-database
                  (alist-cons id (list advice (+ 1 contribution)) database)])
             (a-process new-database keys-len))
           (a-process database keys-len)))))
-
-(define (good-effect-advice?)
-  (print "もし提案した手法が効果があると感じた場合は g を入力してください。")
-  (eq? (read) 'g))
 
 (define (a-process database keys-len)
   (print "\n調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
