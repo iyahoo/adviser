@@ -41,6 +41,12 @@
   ;; database -> id -> entry -> database
   (alist-cons id (cdr entry) (alist-delete id db)))
 
+(define (db-ids db)
+  (map entry-id db))
+
+(define (db-contributions db)
+  (map entry-contribution db))
+
 (define (update-entry db id f)
   ;; database -> id -> (advice -> contribution -> entry) -> database
   ;; fにidとentryそのものを渡さないのは、
@@ -72,9 +78,9 @@
               (loop judge-value (cdr lst) (cdr keys)))))))
 
 (define (select-advice-id database)
-  (let* ([contributions (map (lambda (entry) (list-ref entry 2)) database)]
+  (let* ([contributions (db-contributions database)]
          [roulette-num  (random-integer (reduce + 0 contributions))]
-         [keys          (map (lambda (entry) (car entry)) database)])
+         [keys          (db-ids database)])
     (id-of-num-minused-by-list-until-0 roulette-num contributions keys)))
 
 
