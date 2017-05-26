@@ -54,8 +54,8 @@
   ;; - entryはそのidとdbから引けるはず
   ;; という理由
   (let* ([entry (get-entry db id)]
-	 [advice (entry-advice entry)]
-	 [contrib (entry-contribution entry)])
+         [advice (entry-advice entry)]
+         [contrib (entry-contribution entry)])
     (set-entry db id (f advice contrib))))
 
 
@@ -77,10 +77,10 @@
               (car keys)
               (loop judge-value (cdr lst) (cdr keys)))))))
 
-(define (select-advice-id database)
-  (let* ([contributions (db-contributions database)]
+(define (select-advice-id db)
+  (let* ([contributions (db-contributions db)]
          [roulette-num  (random-integer (reduce + 0 contributions))]
-         [keys          (db-ids database)])
+         [keys          (db-ids db)])
     (id-of-num-minused-by-list-until-0 roulette-num contributions keys)))
 
 
@@ -109,22 +109,22 @@
     (when (> time current) (loop (+ 1 current)))))
 
 
-(define (show-advices database)
+(define (show-advices db)
   (string-concatenate
    (map
     (match-lambda ([id advice contribution]
                    (string-concatenate (list (number->string id) ": " advice "\n")))
                   (else
                    ""))
-    database)))
+    db)))
 
-(define (print-evaluate-advice target-id database)
-  (let ([entry (get-entry database target-id)])
+(define (print-evaluate-advice target-id db)
+  (let ([entry (get-entry db target-id)])
     (print (entry-advice entry))
     (print "もし提案した手法が効果があると感じた場合は g を入力してください。")
     (if (good-effect-advice?)
-	(a-process (increment-contribution database target-id))
-	(a-process database))))
+        (a-process (increment-contribution db target-id))
+        (a-process db))))
 
 (define (good-effect-advice?)
   (eq? (read) 'g))
@@ -136,21 +136,21 @@
 
 (define (notify message)
   (when (file-is-executable? *notify-script-path*)
-	(sys-system
-	 (format #f "~A ~S" *notify-script-path* message))))
+    (sys-system
+     (format #f "~A ~S" *notify-script-path* message))))
 
-(define (a-process database)
+(define (a-process db)
   (print "\n調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
   (let ([command (read)])
     (match command
       ['good
        (print "今の作業を何分やりますか？正の整数を入力して下さい")
        (let ([work-time (read)])
-	 (sleep-loop a-minute-sleep work-time 5))
+         (sleep-loop a-minute-sleep work-time 5))
        (notify "Finish working time")
-       (a-process database)]
+       (a-process db)]
       ['exit
-       (save-file *database-file-path* database)
+       (save-file *database-file-path* db)
        (print "終了します")]
       [else
        (let advice-loop []
@@ -158,22 +158,22 @@
          (print "(t:アドバイスをランダムに選択 all:一覧を見る others:戻る)")
          (match (read)
            ['t
-            (let ([target-id (select-advice-id database)])
-              (print-evaluate-advice target-id database))]
+            (let ([target-id (select-advice-id db)])
+              (print-evaluate-advice target-id db))]
            ['all
-            (print (show-advices database))
+            (print (show-advices db))
             (print "試してみるアドバイスを入力してください")
             (let ([input-id (read)])
-              (print-evaluate-advice input-id database))]
+              (print-evaluate-advice input-id db))]
            [else
-            (a-process database)]))])))
+            (a-process db)]))])))
 
 
 ;; main
 
 (define (main :optional (args '()))
   (let* ([db-file (if (file-is-writable? *database-file-path*)
-		      *database-file-path*
-		      *database-seed-path*)]
-	 [database (read-file db-file)])
-    (a-process database)))
+                      *database-file-path*
+                      *database-seed-path*)]
+         [db (read-file db-file)])
+    (a-process db)))
