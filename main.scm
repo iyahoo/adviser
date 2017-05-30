@@ -1,6 +1,6 @@
 (use srfi-1)
 (use srfi-13)                           ; 文字列
-(use srfi-27)                           ; for 乱数
+(use srfi-27)                           ; 乱数
 (use util.match)                        ; like destructuring-bind
 (use gauche.process)                    ; System call
 (use file.util)
@@ -140,7 +140,8 @@
      (format #f "~A ~S" *notify-script-path* message))))
 
 (define (a-process db)
-  (print "\n調子はどうですか？(good, bad or exit. 他は bad として認識されます)")
+  (print "\n調子はどうですか？")
+  (print "(good: 作業を継続 bad:アドバイス exit:終了 それ以外:bad として認識)")
   (let ([command (read)])
     (match command
       ['good
@@ -155,18 +156,19 @@
       [else
        (let advice-loop []
          (print "何かアドバイスをしましょうか？それとも一覧を見ますか？")
-         (print "(t:アドバイスをランダムに選択 all:一覧を見る others:戻る)")
-         (match (read)
-           ['t
-            (let ([target-id (select-advice-id db)])
-              (print-evaluate-advice target-id db))]
-           ['all
-            (print (show-advices db))
-            (print "試してみるアドバイスを入力してください")
-            (let ([input-id (read)])
-              (print-evaluate-advice input-id db))]
-           [else
-            (a-process db)]))])))
+         (print "(t:アドバイスをランダムに選択 all:一覧を見る それ以外:戻る)")
+         (let ([op (read)])
+           (match op
+             ['t
+              (let ([target-id (select-advice-id db)])
+                (print-evaluate-advice target-id db))]
+             ['all
+              (print (show-advices db))
+              (print "試してみるアドバイスを入力してください")
+              (let ([input-id (read)])
+                (print-evaluate-advice input-id db))]
+             [else
+              (a-process db)])))])))
 
 
 ;; main
