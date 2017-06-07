@@ -182,3 +182,25 @@
 
 (define (main :optional (args '()))
   (a-process (load-database)))
+
+
+;; chat
+
+(define (main-chat)
+  (chat-repl (load-database)))
+
+(define (advise answer db)
+  (print "(´・∀・｀)ﾍｰ")
+  (not (equal? answer "bye")))
+
+(define (prompt)
+  (format #t "> ")
+  (flush)
+  (read-line))
+
+(define (chat-repl db)
+  (print "調子はどう？")
+  (let loop ()
+    (let* ([answer (prompt)])
+      (when (advise answer db)
+	    (loop)))))
