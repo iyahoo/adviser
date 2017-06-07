@@ -16,6 +16,13 @@
   (with-output-to-file fname (lambda [] (write data))
                        :if-exists :supersede))
 
+(define (load-database)
+  (let* ([db-file (if (file-is-writable? *database-file-path*)
+                      *database-file-path*
+                      *database-seed-path*)]
+         [db (read-file db-file)])
+    db))
+
 ;; Entry Accessors
 ;; entry: (id advice contribution)
 
@@ -174,8 +181,4 @@
 ;; main
 
 (define (main :optional (args '()))
-  (let* ([db-file (if (file-is-writable? *database-file-path*)
-                      *database-file-path*
-                      *database-seed-path*)]
-         [db (read-file db-file)])
-    (a-process db)))
+  (a-process (load-database)))
