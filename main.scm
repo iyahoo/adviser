@@ -8,6 +8,7 @@
 (define *database-seed-path* "./seed.sxp")
 (define *database-file-path* "./database.sxp")
 (define *notify-script-path* "./notify.sh")
+(define *reading-script-path*  "./reading.sh")
 
 (define (read-file fname)
   (with-input-from-file fname (lambda [] (read))))
@@ -86,7 +87,7 @@
 
 ;; Print-Eval-Advice-Loop
 
-;; Sleep and Display
+;; Sleep, Display and Reading
 (define (a-minute-sleep)
   (sys-sleep 60))
 
@@ -126,9 +127,17 @@
         (a-process (increment-contribution db target-id))
         (a-process db))))
 
+(define-macro (with-executabl-file file-path str)
+  `(when (file-is-executable? ,file-path)
+     (sys-system (format #f "~A ~S" ,file-path ,str))))
+
+(define (reading-string str)
+  (when (file-is-executable? *reading-script-path*)
+    (sys-system
+     (format #f "~A ~S" *reading-script-path* str))))
+
 (define (good-effect-advice?)
   (eq? (read) 'g))
-
 
 (define (check-os)
   (call-with-input-process "uname"
