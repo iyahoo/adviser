@@ -21,6 +21,6 @@ $ rlwrap gosh main.scm
 
 作業終了後などに通知を行う事ができます。
 
-main.scmと同じディレクトリに`notify.sh`という実行可能なシェルスクリプトがあると、第一引数に通知メッセージを渡して実行します。
-
 `notify-scripts`にmacやlinux向けのサンプルを用意しています。
+
+`make mac` または `make linux` でコマンドに応じたスクリプトを `notify-scripts` から展開します。自分の環境に合わせて選択してください。
