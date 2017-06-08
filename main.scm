@@ -126,22 +126,24 @@
                    ""))
     db)))
 
+(define (executable-file-with-str file-path str)
+  (when (file-is-executable? file-path)
+    (sys-system (format #f "~A ~S" file-path str))))
+
+(define (reading message)
+  (executable-file-with-str *reading-script-path* message))
+
 (define (print-evaluate-advice target-id db)
   (let ([entry (get-entry db target-id)])
-    (print (entry-advice entry))
+    (print-and-reading (entry-advice entry))
     (print "もし提案した手法が効果があると感じた場合は g を入力してください。")
     (if (good-effect-advice?)
         (a-process (increment-contribution db target-id))
         (a-process db))))
 
-(define-macro (with-executabl-file file-path str)
-  `(when (file-is-executable? ,file-path)
-     (sys-system (format #f "~A ~S" ,file-path ,str))))
-
-(define (reading-string str)
-  (when (file-is-executable? *reading-script-path*)
-    (sys-system
-     (format #f "~A ~S" *reading-script-path* str))))
+(define (print-and-reading message)
+  (print message)
+  (reading message))
 
 (define (good-effect-advice?)
   (eq? (read) 'g))
@@ -151,27 +153,26 @@
     (lambda (p) (make-keyword (read-line p)))))
 
 (define (notify message)
-  (when (file-is-executable? *notify-script-path*)
-    (sys-system
-     (format #f "~A ~S" *notify-script-path* message))))
+  (executable-file-with-str *notify-script-path* message))
 
 (define (a-process db)
-  (print "\n調子はどうですか？")
+  (print "\n")
+  (print-and-reading "調子はどうですか？")
   (print "(good: 作業を継続 bad:アドバイス exit:終了 それ以外:bad として認識)")
   (let ([command (read)])
     (match command
       ['good
-       (print "今の作業を何分やりますか？正の整数を入力して下さい")
+       (print-and-reading "今の作業を何分やりますか？")
        (let ([work-time (read)])
          (sleep-loop a-minute-sleep work-time 5))
        (notify "Finish working time")
        (a-process db)]
       ['exit
        (save-file *database-file-path* db)
-       (print "終了します")]
+       (print-and-reading "終了します")]
       [else
        (let advice-loop []
-         (print "何かアドバイスをしましょうか？それとも一覧を見ますか？")
+         (print-and-reading "何かアドバイスをしましょうか？それとも一覧を見ますか？")
          (print "(t:アドバイスをランダムに選択 all:一覧を見る それ以外:戻る)")
          (let ([op (read)])
            (match op
@@ -180,7 +181,7 @@
                 (print-evaluate-advice target-id db))]
              ['all
               (print (show-advices db))
-              (print "試してみるアドバイスを入力してください")
+              (print-and-reading "試してみるアドバイスを入力してください")
               (let ([input-id (read)])
                 (print-evaluate-advice input-id db))]
              [else
@@ -199,7 +200,7 @@
   (chat-repl (load-database)))
 
 (define (advise answer db)
-  (print "(´・∀・｀)ﾍｰ")
+  (print-and-reading "(´・∀・｀)ﾍｰ")
   (not (equal? answer "bye")))
 
 (define (prompt)
@@ -208,7 +209,7 @@
   (read-line))
 
 (define (chat-repl db)
-  (print "調子はどう？")
+  (print-and-reading "調子はどう？")
   (let loop ()
     (let* ([answer (prompt)])
       (when (advise answer db)
