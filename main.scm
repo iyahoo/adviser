@@ -158,7 +158,7 @@
 (define (a-process db)
   (print "\n")
   (print-and-reading "調子はどうですか？")
-  (print "(good: 作業を継続 bad:アドバイス exit:終了 それ以外:bad として認識)")
+  (print "(good: 作業を継続 rest: 休憩 bad:アドバイス exit:終了 それ以外:bad として認識)")
   (let ([command (read)])
     (match command
       ['good
@@ -167,6 +167,11 @@
          (sleep-loop a-minute-sleep work-time 5))
        (notify "Finish working time")
        (a-process db)]
+      ['rest
+       (print-and-reading "何分休憩しますか？")
+       (let ([rest-time (read)])
+         (sleep-loop a-minute-sleep rest-time 5))
+       (notify "Finish rest time")]
       ['exit
        (save-file *database-file-path* db)
        (print-and-reading "終了します")]
