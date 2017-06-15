@@ -166,12 +166,15 @@
        (let ([work-time (read)])
          (sleep-loop a-minute-sleep work-time 5))
        (notify "Finish working time")
+       ;; Exit 時だけでは途中で kill された時に残らないので、作業するたびに log file を更新する
+       ;; (update-log-file work-time)
        (a-process db)]
       ['rest
        (print-and-reading "何分休憩しますか？")
        (let ([rest-time (read)])
          (sleep-loop a-minute-sleep rest-time 5))
-       (notify "Finish rest time")]
+       (notify "Finish rest time")
+       (a-process db)]
       ['exit
        (save-file *database-file-path* db)
        (print-and-reading "終了します")]
