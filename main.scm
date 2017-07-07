@@ -220,7 +220,7 @@
 (define (good-process db log)
   (print-and-reading "今の作業を何分やりますか？")
   (let ([work-time (read)])
-    (sleep-loop a-second-sleep work-time 5)
+    (sleep-loop a-minute-sleep work-time 5)
     ;; (sleep-loop a-second-sleep work-time 5) ;; for test
     (notify "Finish working time")
     ;; Exit 時だけでは途中で kill された時に残らないので、作業するたびに log file を更新する
