@@ -24,3 +24,8 @@ $ rlwrap gosh main.scm
 `notify-scripts`にmacやlinux向けのサンプルを用意しています。
 
 `make mac` または `make linux` でコマンドに応じたスクリプトを `notify-scripts` から展開します。自分の環境に合わせて選択してください。
+
+## Gitemoji
+
+comit dbe0d9758ab90d58461e0d6682477c36012e5d32 から https://github.com/carloscuesta/gitmoji を参考に emoji の統一を心がけるようにしました
+
