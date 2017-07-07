@@ -1,5 +1,6 @@
 (use srfi-1)
 (use srfi-13)                           ; 文字列
+(use srfi-19)                           ; date
 (use srfi-27)                           ; 乱数
 (use util.match)                        ; like destructuring-bind
 (use gauche.process)                    ; System call
@@ -7,6 +8,8 @@
 
 (define *database-seed-path* "./seed.sxp")
 (define *database-file-path* "./database.sxp")
+(define *log-seed-path* "./log-seed.sxp")
+(define *log-file-path* "./log.sxp")
 (define *notify-script-path* "./notify.sh")
 (define *reading-script-path*  "./reading.sh")
 
@@ -17,12 +20,60 @@
   (with-output-to-file fname (lambda [] (write data))
                        :if-exists :supersede))
 
+(define (load-seed-or-user-file seed-file user-file)
+  (let* ([file (if (file-is-writable? user-file)
+                   user-file
+                   seed-file)]
+         [contents (read-file file)])
+    contents))
+
+(define (load-log)
+  (let* ([today-tag (current-date-keyword)]
+         [logs (load-seed-or-user-file *log-seed-path* *log-file-path*)])
+    (if (null? logs)
+        (set-log-entry logs today-tag (make-log-entry today-tag 0))
+        logs)))
+
 (define (load-database)
-  (let* ([db-file (if (file-is-writable? *database-file-path*)
-                      *database-file-path*
-                      *database-seed-path*)]
-         [db (read-file db-file)])
-    db))
+  (load-seed-or-user-file *database-seed-path* *database-file-path*))
+
+;; Log Entry Accecsor
+;; Log entry: (:yyyy-mm-dd (:workedtime total-minute-worked-time))
+
+(define (current-date-keyword)
+  (let ([now (current-date)])
+    (make-keyword
+     (format #f "~A-~2,,,'0@A-~2,,,'0@A" (date-year now) (date-month now) (date-day now)))))
+
+;; ((:workedtime 5) (:otherinfor hoge)) のように拡張することを想定して以下のように
+(define (make-log-entry date worked-time)
+  `(,date ((:workedtime ,worked-time))))
+
+(define (log-entry-date entry)
+  (first entry))
+
+(define (log-entry-information entry)
+  (second entry))
+
+(define (log-entry-worked-time infor)
+  ;; entry -> workedtime :: Integer
+  (second (assoc :workedtime infor)))
+
+;; Log Accessors (non-destructive)
+
+(define (get-log-entry log date)
+  (assoc date log))
+
+(define (set-log-entry log date entry)
+  ;; database -> id -> entry -> database
+  (alist-cons date (cdr entry) (alist-delete date log)))
+
+(define (update-log-entry log date f)
+  ;; log -> date -> (infor -> infor) -> log
+  (let* ([entry (get-log-entry log date)]
+         [date  (log-entry-date entry)]
+         [infor (log-entry-information entry)])
+    (set-log-entry log date (f infor))))
 
 ;; Entry Accessors
 ;; entry: (id advice contribution)
@@ -138,8 +189,8 @@
     (print-and-reading (entry-advice entry))
     (print "もし提案した手法が効果があると感じた場合は g を入力してください。")
     (if (good-effect-advice?)
-        (a-process (increment-contribution db target-id))
-        (a-process db))))
+        (a-process (increment-contribution db target-id) log)
+        (a-process db log))))
 
 (define (print-and-reading message)
   (print message)
@@ -155,51 +206,59 @@
 (define (notify message)
   (executable-file-with-str *notify-script-path* message))
 
-(define (a-process db)
+(define (a-process db log)
   (print "\n")
   (print-and-reading "調子はどうですか？")
   (print "(good: 作業を継続 rest: 休憩 bad:アドバイス exit:終了 それ以外:bad として認識)")
   (let ([command (read)])
     (match command
-      ['good
-       (print-and-reading "今の作業を何分やりますか？")
-       (let ([work-time (read)])
-         (sleep-loop a-minute-sleep work-time 5))
-       (notify "Finish working time")
-       ;; Exit 時だけでは途中で kill された時に残らないので、作業するたびに log file を更新する
-       ;; (update-log-file work-time)
-       (a-process db)]
-      ['rest
-       (print-and-reading "何分休憩しますか？")
-       (let ([rest-time (read)])
-         (sleep-loop a-minute-sleep rest-time 5))
-       (notify "Finish rest time")
-       (a-process db)]
-      ['exit
-       (save-file *database-file-path* db)
-       (print-and-reading "終了します")]
-      [else
-       (let advice-loop []
-         (print-and-reading "何かアドバイスをしましょうか？それとも一覧を見ますか？")
-         (print "(t:アドバイスをランダムに選択 all:一覧を見る それ以外:戻る)")
-         (let ([op (read)])
-           (match op
-             ['t
-              (let ([target-id (select-advice-id db)])
-                (print-evaluate-advice target-id db))]
-             ['all
-              (print (show-advices db))
-              (print-and-reading "試してみるアドバイスを入力してください")
-              (let ([input-id (read)])
-                (print-evaluate-advice input-id db))]
-             [else
-              (a-process db)])))])))
+           ['good
+            (print-and-reading "今の作業を何分やりますか？")
+            (let ([work-time (read)])
+              (sleep-loop a-second-sleep work-time 5)
+              ;; (sleep-loop a-second-sleep work-time 5) ;; for test
+              (notify "Finish working time")
+              ;; Exit 時だけでは途中で kill された時に残らないので、作業するたびに log file を更新する
+              (let* ([today-tag (current-date-keyword)]
+                     [new-log
+                      (update-log-entry log today-tag
+                                        (^[infor]
+                                          (list today-tag
+                                                (list :workedtime
+                                                      (+ (log-entry-worked-time infor) work-time)))))])
+                (save-file *log-file-path* new-log)
+                (a-process db new-log)))]
+           ['rest
+            (print-and-reading "何分休憩しますか？")
+            (let ([rest-time (read)])
+              (sleep-loop a-minute-sleep rest-time 5))
+            (notify "Finish rest time")
+            (a-process db log)]
+           ['exit
+            (save-file *database-file-path* db)
+            (print-and-reading "終了します")]
+           [else
+            (let advice-loop []
+              (print-and-reading "何かアドバイスをしましょうか？それとも一覧を見ますか？")
+              (print "(t:アドバイスをランダムに選択 all:一覧を見る それ以外:戻る)")
+              (let ([op (read)])
+                (match op
+                       ['t
+                        (let ([target-id (select-advice-id db)])
+                          (print-evaluate-advice target-id db))]
+                       ['all
+                        (print (show-advices db))
+                        (print-and-reading "試してみるアドバイスを入力してください")
+                        (let ([input-id (read)])
+                          (print-evaluate-advice input-id db))]
+                       [else
+                        (a-process db log)])))])))
 
 
 ;; main
 
 (define (main :optional (args '()))
-  (a-process (load-database)))
+  (a-process (load-database) (load-log)))
 
 
 ;; chat
