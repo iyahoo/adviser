@@ -38,7 +38,7 @@
   (load-seed-or-user-file *database-seed-path* *database-file-path*))
 
 ;; Log Entry Accecsor
-;; Log entry: (:yyyy-mm-dd (:workedtime total-minute-worked-time))
+;; Log entry: (:yyyy-mm-dd ((:workedtime total-worked-time)))
 
 (define (current-date-keyword)
   (let ([now (current-date)])
@@ -56,7 +56,7 @@
   (second entry))
 
 (define (log-entry-worked-time infor)
-  ;; entry -> workedtime :: Integer
+  ;; infor -> Integer (workedtime)
   (second (assoc :workedtime infor)))
 
 ;; Log Accessors (non-destructive)
@@ -65,7 +65,7 @@
   (assoc date log))
 
 (define (set-log-entry log date entry)
-  ;; database -> id -> entry -> database
+  ;; log -> date -> entry -> log
   (alist-cons date (cdr entry) (alist-delete date log)))
 
 (define (update-log-entry log date f)
@@ -173,8 +173,7 @@
    (map
     (match-lambda ([id advice contribution]
                    (string-concatenate (list (number->string id) ": " advice "\n")))
-                  (else
-                   ""))
+                  (else ""))
     db)))
 
 (define (executable-file-with-str file-path str)
