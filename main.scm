@@ -13,6 +13,9 @@
 (define *notify-script-path* "./notify.sh")
 (define *reading-script-path*  "./reading.sh")
 
+;; for debug
+(define *debugging* #f)
+
 (define (read-file fname)
   (with-input-from-file fname (lambda [] (read))))
 
@@ -219,17 +222,15 @@
 (define (good-process db log)
   (print-and-reading "今の作業を何分やりますか？")
   (let ([work-time (read)])
-    (sleep-loop a-minute-sleep work-time 5)
-    ;; (sleep-loop a-second-sleep work-time 5) ;; for test
+    (if *debugging*
+        (sleep-loop a-second-sleep work-time 5)
+        (sleep-loop a-minute-sleep work-time 5))
+    (print "\n")
     (notify "Finish working time")
     ;; Exit 時だけでは途中で kill された時に残らないので、作業するたびに log file を更新する
     (let* ([today-tag (current-date-keyword)]
            [new-log
-            (update-log-entry log today-tag
-                              (^[infor]
-                                (alist-cons :workedtime
-                                            (list (+ (log-entry-worked-time infor) work-time))
-                                            (alist-delete :workedtime infor))))])
+            (update-log-entry log today-tag (^[infor] (adding-worked-time infor work-time)))])
       (save-file *log-file-path* new-log)
       (process db new-log))))
 
@@ -250,20 +251,22 @@
     (print "(t:アドバイスをランダムに選択 all:一覧を見る それ以外:戻る)")
     (let ([op (read)])
       (match op
-             ['t
-              (let ([target-id (select-advice-id db)])
-                (print-evaluate-advice target-id db))]
-             ['all
-              (print (show-advices db))
-              (print-and-reading "試してみるアドバイスを入力してください")
-              (let ([input-id (read)])
-                (print-evaluate-advice input-id db))]
-             [else
-              (process db log)]))))
+        ['t
+         (let ([target-id (select-advice-id db)])
+           (print-evaluate-advice target-id db))]
+        ['all
+         (print (show-advices db))
+         (print-and-reading "試してみるアドバイスを入力してください")
+         (let ([input-id (read)])
+           (print-evaluate-advice input-id db))]
+        [else
+         (process db log)]))))
 
 ;; main
 
 (define (main :optional (args '()))
+  (when (> (length args) 1)
+    (set! *debugging* (eq? (read-from-string (second args)) :debug)))
   (process (load-database) (load-log)))
 
 
