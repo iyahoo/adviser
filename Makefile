@@ -5,6 +5,9 @@ mac:
 linux:
 	cp ./notify-scripts/linux-notify-send.sh notify.sh
 
+check:
+	gosh check.scm
+
 clean:
 	rm notify.sh
 	rm reading.sh
