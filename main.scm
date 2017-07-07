@@ -78,6 +78,11 @@
          [infor (log-entry-information entry)])
     (set-log-entry log date (list date (f infor)))))
 
+(define (adding-worked-time infor add-time)
+  (alist-cons :workedtime
+              (list (+ (log-entry-worked-time infor) add-time))
+              (alist-delete :workedtime infor)))
+
 ;; Entry Accessors
 ;; entry: (id advice contribution)
 
@@ -209,7 +214,6 @@
   (executable-file-with-str *notify-script-path* message))
 
 (define (process db log)
-  (print "\n")
   (print-and-reading "調子はどうですか？")
   (print "(good: 作業を継続 rest: 休憩 bad:アドバイス exit:終了 それ以外:bad として認識)")
   (let ([command (read)])
