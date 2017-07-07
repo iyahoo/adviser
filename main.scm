@@ -73,7 +73,7 @@
   (let* ([entry (get-log-entry log date)]
          [date  (log-entry-date entry)]
          [infor (log-entry-information entry)])
-    (set-log-entry log date (f infor))))
+    (set-log-entry log date (list date (f infor)))))
 
 ;; Entry Accessors
 ;; entry: (id advice contribution)
