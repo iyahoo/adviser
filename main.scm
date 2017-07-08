@@ -6,6 +6,8 @@
 (use gauche.process)                    ; System call
 (use file.util)
 
+;; File paths
+
 (define *database-seed-path* "./seed.sxp")
 (define *database-file-path* "./database.sxp")
 (define *log-seed-path* "./log-seed.sxp")
@@ -65,7 +67,10 @@
 ;; Log Accessors (non-destructive)
 
 (define (get-log-entry log date)
-  (assoc date log))
+  (let ([entry-or-false (assoc date log)])
+    (if entry-or-false
+        entry-or-false
+        (make-log-entry date 0))))
 
 (define (set-log-entry log date entry)
   ;; log -> date -> entry -> log
