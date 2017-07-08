@@ -8,9 +8,9 @@
 
 ;; File paths
 
-(define *database-seed-path* "./seed.sxp")
+(define *database-seed-path* "./seeds/seed.sxp")
 (define *database-file-path* "./database.sxp")
-(define *log-seed-path* "./log-seed.sxp")
+(define *log-seed-path* "./seeds/log-seed.sxp")
 (define *log-file-path* "./log.sxp")
 (define *notify-script-path* "./notify.sh")
 (define *reading-script-path*  "./reading.sh")
