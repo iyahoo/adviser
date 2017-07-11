@@ -18,6 +18,10 @@
 ;; for debug
 (define *debugging* #f)
 
+
+
+;;;;;;;;;; Codes
+
 (define (read-file fname)
   (with-input-from-file fname (lambda [] (read))))
 
@@ -42,6 +46,8 @@
 (define (load-database)
   (load-seed-or-user-file *database-seed-path* *database-file-path*))
 
+
+
 ;; Log Entry Accecsor
 ;; Log entry: (:yyyy-mm-dd ((:workedtime total-worked-time)))
 
@@ -50,8 +56,8 @@
     (make-keyword
      (format #f "~A-~2,,,'0@A-~2,,,'0@A" (date-year now) (date-month now) (date-day now)))))
 
-;; ((:workedtime 5) (:otherinfor hoge)) のように拡張することを想定して以下のように
 (define (make-log-entry date worked-time)
+  ;; ((:workedtime 5) (:otherinfor hoge)) のように拡張することを想定して以下のように
   `(,date ((:workedtime ,worked-time))))
 
 (define (log-entry-date entry)
@@ -88,7 +94,7 @@
               (list (+ (log-entry-worked-time infor) add-time))
               (alist-delete :workedtime infor)))
 
-;; Entry Accessors
+;; Database Entry Accessors
 ;; entry: (id advice contribution)
 
 (define (make-entry id advice contribution)
@@ -102,7 +108,6 @@
 
 (define (entry-contribution entry)
   (third entry))
-
 
 ;; Database Accessors (non-destructive)
 
@@ -130,13 +135,11 @@
          [contrib (entry-contribution entry)])
     (set-entry db id (f advice contrib))))
 
-
 ;; Entry Operators
 
 (define (increment-contribution db id)
   ;; database -> entry-id -> database
   (update-entry db id (lambda [advice contrib] (make-entry id advice (+ contrib 1)))))
-
 
 ;; Entry selection routine
 
@@ -156,10 +159,11 @@
     (id-of-num-minused-by-list-until-0 roulette-num contributions keys)))
 
 
+
 ;; Print-Eval-Advice-Loop
 
 ;; Sleep, Display and Reading
-;; :normal は入力が無く指定された時間待ち続けたことを意味するので通常終了 :normal を返す
+;;;; :normal は入力が無く指定された時間待ち続けたことを意味するので通常終了 :normal を返す
 (define (a-minute-sleep)
   (with-timeout read 60 :normal))
 
@@ -290,6 +294,8 @@
              [else
               (process db log)]))))
 
+
+
 ;; timeout
 
 (define (with-timeout proc sec default)
@@ -304,12 +310,17 @@
            (lambda () (proc))
            (lambda () (sys-alarm 0)))))))
 
+
+
+
 ;; main
 
 (define (main :optional (args '()))
   (when (> (length args) 1)
         (set! *debugging* (eq? (read-from-string (second args)) :debug)))
   (process (load-database) (load-log)))
+
+
 
 
 ;; chat
