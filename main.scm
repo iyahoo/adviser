@@ -23,11 +23,13 @@
 ;;;;;;;;;; Codes
 
 (define (read-file fname)
-  (with-input-from-file fname (lambda [] (read))))
+  (with-input-from-file fname
+    (lambda [] (read))))
 
 (define (save-file fname data)
-  (with-output-to-file fname (lambda [] (write data))
-                       :if-exists :supersede))
+  (with-output-to-file fname
+    (lambda [] (write data))
+    :if-exists :supersede))
 
 (define (load-seed-or-user-file seed-file user-file)
   (let* ([file (if (file-is-writable? user-file)
@@ -194,14 +196,15 @@
 (define (show-advices db)
   (string-concatenate
    (map
-    (match-lambda ([id advice contribution]
-                   (string-concatenate (list (number->string id) ": " advice "\n")))
-                  (else ""))
+    (match-lambda
+     ([id advice contribution]
+        (string-concatenate (list (number->string id) ": " advice "\n")))
+     (else ""))
     db)))
 
 (define (executable-file-with-str file-path str)
   (when (file-is-executable? file-path)
-        (sys-system (format #f "~A ~S" file-path str))))
+    (sys-system (format #f "~A ~S" file-path str))))
 
 (define (reading message)
   (executable-file-with-str *reading-script-path* message))
@@ -223,7 +226,7 @@
 
 (define (check-os)
   (call-with-input-process "uname"
-                           (lambda (p) (make-keyword (read-line p)))))
+    (lambda (p) (make-keyword (read-line p)))))
 
 (define (notify message)
   (executable-file-with-str *notify-script-path* message))
@@ -233,10 +236,10 @@
   (print "(good: 作業を継続 rest: 休憩 bad:アドバイス exit:終了 それ以外:bad として認識)")
   (let ([command (read)])
     (match command
-           ['good (good-process db log)]
-           ['rest (rest-process db log)]
-           ['exit (exit-process db log)]
-           [else  (else-process db log)])))
+      ['good (good-process db log)]
+      ['rest (rest-process db log)]
+      ['exit (exit-process db log)]
+      [else  (else-process db log)])))
 
 (define-syntax normal-or-debug
   (syntax-rules ()
@@ -283,17 +286,16 @@
     (print "(t:アドバイスをランダムに選択 all:一覧を見る それ以外:戻る)")
     (let ([op (read)])
       (match op
-             ['t
-              (let ([target-id (select-advice-id db)])
-                (print-evaluate-advice target-id db))]
-             ['all
-              (print (show-advices db))
-              (print-and-reading "試してみるアドバイスを入力してください")
-              (let ([input-id (read)])
-                (print-evaluate-advice input-id db))]
-             [else
-              (process db log)]))))
-
+        ['t
+         (let ([target-id (select-advice-id db)])
+           (print-evaluate-advice target-id db))]
+        ['all
+         (print (show-advices db))
+         (print-and-reading "試してみるアドバイスを入力してください")
+         (let ([input-id (read)])
+           (print-evaluate-advice input-id db))]
+        [else
+         (process db log)]))))
 
 
 ;; timeout
@@ -303,12 +305,12 @@
   ;; キーボードの割り込みを待つようにみせかける
   (let/cc k
     (with-signal-handlers
-     ((SIGALRM (k default)))
-     (lambda ()
-       (dynamic-wind
-           (lambda () (sys-alarm sec))
-           (lambda () (proc))
-           (lambda () (sys-alarm 0)))))))
+      ((SIGALRM (k default)))
+        (lambda ()
+          (dynamic-wind
+              (lambda () (sys-alarm sec))
+              (lambda () (proc))
+              (lambda () (sys-alarm 0)))))))
 
 
 
@@ -317,7 +319,7 @@
 
 (define (main :optional (args '()))
   (when (> (length args) 1)
-        (set! *debugging* (eq? (read-from-string (second args)) :debug)))
+    (set! *debugging* (eq? (read-from-string (second args)) :debug)))
   (process (load-database) (load-log)))
 
 
@@ -342,4 +344,5 @@
   (let loop ()
     (let* ([answer (prompt)])
       (when (advise answer db)
-            (loop)))))
+        (loop)))))
+
