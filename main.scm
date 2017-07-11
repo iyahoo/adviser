@@ -159,11 +159,12 @@
 ;; Print-Eval-Advice-Loop
 
 ;; Sleep, Display and Reading
+;; :normal は入力が無く指定された時間待ち続けたことを意味するので通常終了 :normal を返す
 (define (a-minute-sleep)
-  (sys-sleep 60))
+  (with-timeout read 60 :normal))
 
 (define (a-second-sleep) ; for debugging
-  (sys-sleep 1))
+  (with-timeout read 1 :normal))
 
 (define (display-elapsed current-time interval)
   (if (= 0 (remainder current-time interval))
@@ -175,11 +176,16 @@
   ;; sleep-unit-f: プロセスをブロックする、スリープ関数
   ;; これにa-second-sleepなどを渡すことで、REPLから動作を確かめられる
   ;; ex: (sleep-loop a-second-sleep 10 3)
+  ;; 異常終了 (key入力があったばあい) はその入力を返す
   (let loop ([current 1])
-    (sleep-unit-f)
-    (display-elapsed current interval)
-    (when (> time current) (loop (+ 1 current)))))
-
+    (let ([val (sleep-unit-f)])
+      (if (eq? :normal val)
+          (begin
+            (display-elapsed current interval)
+            (if (> time current)
+                (loop (+ 1 current))
+                :normal))
+          val))))
 
 (define (show-advices db)
   (string-concatenate
@@ -191,7 +197,7 @@
 
 (define (executable-file-with-str file-path str)
   (when (file-is-executable? file-path)
-    (sys-system (format #f "~A ~S" file-path str))))
+        (sys-system (format #f "~A ~S" file-path str))))
 
 (define (reading message)
   (executable-file-with-str *reading-script-path* message))
@@ -213,7 +219,7 @@
 
 (define (check-os)
   (call-with-input-process "uname"
-    (lambda (p) (make-keyword (read-line p)))))
+                           (lambda (p) (make-keyword (read-line p)))))
 
 (define (notify message)
   (executable-file-with-str *notify-script-path* message))
@@ -223,25 +229,38 @@
   (print "(good: 作業を継続 rest: 休憩 bad:アドバイス exit:終了 それ以外:bad として認識)")
   (let ([command (read)])
     (match command
-      ['good (good-process db log)]
-      ['rest (rest-process db log)]
-      ['exit (exit-process db log)]
-      [else  (else-process db log)])))
+           ['good (good-process db log)]
+           ['rest (rest-process db log)]
+           ['exit (exit-process db log)]
+           [else  (else-process db log)])))
+
+(define-syntax normal-or-debug
+  (syntax-rules ()
+    ((_ normal debug)
+     (if *debugging*
+         debug
+         normal))))
+
+(define (sleep-with-debug work-time)
+  (normal-or-debug (sleep-loop a-minute-sleep work-time 5) (sleep-loop a-second-sleep work-time 5)))
 
 (define (good-process db log)
-  (print-and-reading "今の作業を何分やりますか？")
+  (print-and-reading "今の作業を何分やりますか？(何かキーボードを入力するとキャンセルします)")
   (let ([work-time (read)])
-    (if *debugging*
-        (sleep-loop a-second-sleep work-time 5)
-        (sleep-loop a-minute-sleep work-time 5))
-    (print "\n")
-    (notify "Finish working time")
-    ;; Exit 時だけでは途中で kill された時に残らないので、作業するたびに log file を更新する
-    (let* ([today-tag (current-date-keyword)]
-           [new-log
-            (update-log-entry log today-tag (^[infor] (adding-worked-time infor work-time)))])
-      (save-file *log-file-path* new-log)
-      (process db new-log))))
+    (if (eq? :normal (sleep-with-debug work-time))
+        (begin
+          (print "\n")
+          (notify "Finish working time!")
+          ;; Exit 時だけでは途中で kill された時に残らないので、作業するたびに log file を更新する
+          (let* ([today-tag (current-date-keyword)]
+                 [new-log
+                  (update-log-entry log today-tag (^[infor] (adding-worked-time infor work-time)))])
+            (save-file *log-file-path* new-log)
+            (process db new-log)))
+        (begin
+          (print "\n")
+          (notify "Work is canceled!")
+          (process db log)))))
 
 (define (rest-process db log)
   (print-and-reading "何分休憩しますか？")
@@ -260,22 +279,36 @@
     (print "(t:アドバイスをランダムに選択 all:一覧を見る それ以外:戻る)")
     (let ([op (read)])
       (match op
-        ['t
-         (let ([target-id (select-advice-id db)])
-           (print-evaluate-advice target-id db))]
-        ['all
-         (print (show-advices db))
-         (print-and-reading "試してみるアドバイスを入力してください")
-         (let ([input-id (read)])
-           (print-evaluate-advice input-id db))]
-        [else
-         (process db log)]))))
+             ['t
+              (let ([target-id (select-advice-id db)])
+                (print-evaluate-advice target-id db))]
+             ['all
+              (print (show-advices db))
+              (print-and-reading "試してみるアドバイスを入力してください")
+              (let ([input-id (read)])
+                (print-evaluate-advice input-id db))]
+             [else
+              (process db log)]))))
+
+;; timeout
+
+(define (with-timeout proc sec default)
+  ;; (with-timeout read 60 #f) のように使うことで 60 秒スリープしつつ
+  ;; キーボードの割り込みを待つようにみせかける
+  (let/cc k
+    (with-signal-handlers
+     ((SIGALRM (k default)))
+     (lambda ()
+       (dynamic-wind
+           (lambda () (sys-alarm sec))
+           (lambda () (proc))
+           (lambda () (sys-alarm 0)))))))
 
 ;; main
 
 (define (main :optional (args '()))
   (when (> (length args) 1)
-    (set! *debugging* (eq? (read-from-string (second args)) :debug)))
+        (set! *debugging* (eq? (read-from-string (second args)) :debug)))
   (process (load-database) (load-log)))
 
 
