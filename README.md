@@ -25,6 +25,12 @@ $ rlwrap gosh main.scm
 
 `make mac` または `make linux` でコマンドに応じたスクリプトを `notify-scripts` フォルダから展開します。自分の環境に合わせて選択してください。
 
+### 注意
+
+現在 (2017/7/21) brew 版の terminal-notifier が通知に失敗します (https://github.com/julienXX/terminal-notifier/issues/222).
+
+https://github.com/julienXX/terminal-notifier/releases から最新版を直接ダウンロードして path の通った場所に置いて下さい。
+
 ## Gitemoji
 
 https://github.com/iyahoo/adviser/commit/dbe0d9758ab90d58461e0d6682477c36012e5d32 のコミットから https://github.com/carloscuesta/gitmoji を参考に emoji の統一を心がけるようにしました。

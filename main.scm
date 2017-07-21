@@ -304,13 +304,12 @@
   ;; (with-timeout read 60 #f) のように使うことで 60 秒スリープしつつ
   ;; キーボードの割り込みを待つようにみせかける
   (let/cc k
-    (with-signal-handlers
-      ((SIGALRM (k default)))
-        (lambda ()
-          (dynamic-wind
-              (lambda () (sys-alarm sec))
-              (lambda () (proc))
-              (lambda () (sys-alarm 0)))))))
+    (with-signal-handlers ((SIGALRM (k default)))
+      (lambda ()
+        (dynamic-wind
+            (lambda () (sys-alarm sec))
+            (lambda () (proc))
+            (lambda () (sys-alarm 0)))))))
 
 
 
